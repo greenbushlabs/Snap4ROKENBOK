@@ -1,4 +1,6 @@
-[![Snap4Arduino Logo](http://snap4arduino.org/img/logo.png)](http://snap4arduino.org)
+Snap4Rokenbok is a version of SNAP4ARDUINO that remaps the RokDUINO board (based off of the Arduino Leonardo) 
+to the Arduino Leonardo pins.
+
 
 Snap4Arduino binds Snap! and Arduino together and is available in several flavors:
 
