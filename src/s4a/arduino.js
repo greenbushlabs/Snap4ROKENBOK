@@ -235,7 +235,7 @@ Arduino.prototype.connectNetwork = function (host) {
                         myself.board.sp.path = myself.hostname;
 
                         myself.hideMessage();
-                        ide.inform(myself.owner.name, localize('An Arduino board has been connected. Happy prototyping!'));
+                        ide.inform(myself.owner.name, localize('Your RoKduino board has been connected. Happy programming!'));
                     } else {
                         myself.hideMessage();
                         ide.inform(myself.owner.name, localize('Error connecting the board.\n') + err, myself.closeHandler(true));
@@ -249,9 +249,9 @@ Arduino.prototype.connectNetwork = function (host) {
         if (err.code === 'EHOSTUNREACH') {
             ide.inform(
                     myself.owner.name, 
-                    localize('Unable to connect to board\n')
+                    localize('Unable to connect to Rokduino\n')
                     + myself.hostname + '\n\n'
-                    + localize('Make sure the board is powered on'));
+                    + localize('Make sure the Rokduino is powered on'));
         } else if (err.code === 'ECONNREFUSED') {
             ide.inform(
                     myself.owner.name,
@@ -290,7 +290,7 @@ Arduino.prototype.connect = function (port, verify) {
 
     this.disconnect(true);
 
-    this.showMessage(localize('Connecting board at port\n') + port);
+    this.showMessage(localize('Connecting Rokduino at port\n') + port);
     this.connecting = true;
 
     if (verify) {
@@ -335,7 +335,7 @@ Arduino.prototype.connect = function (port, verify) {
                 myself.board.connected = true;
 
                 myself.hideMessage();
-                ide.inform(myself.owner.name, localize('An Arduino board has been connected. Happy prototyping!'));   
+                ide.inform(myself.owner.name, localize('A Rokduino board has been connected. Happy programming!'));   
             } else {
                 fail(err);
             }
@@ -351,7 +351,7 @@ Arduino.prototype.connect = function (port, verify) {
                 myself.hideMessage();
                 ide.inform(
                         myself.owner.name,
-                        localize('Could not talk to Arduino in port\n')
+                        localize('Could not talk to RoKduino in port\n')
                         + port + '\n\n' + localize('Check if firmata is loaded.')
                         );
 

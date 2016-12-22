@@ -43,7 +43,7 @@
     */
 
     // arduino:
-	'Arduino':'ארדוינו' ,
+	'rokduino':'ארדוינו' ,
     'digital input':'כניסה דיגיטלית' ,
     'digital output': 'יציאה דיגיטלית' ,
     'PWM': 'מנוע' ,

@@ -6,12 +6,12 @@ SpriteIconMorph.prototype.userMenu = function () {
     menu.addLine();
     var myself = this;
     menu.addItem(
-            'connect to Arduino',
-            function () { 
+            'connect to Rokduino',
+            function () {
                 myself.object.arduino.attemptConnection();
             });
     menu.addItem(
-            'disconnect Arduino',
+            'disconnect Rokduino',
             function () {
                 myself.object.arduino.disconnect();
             });
@@ -20,7 +20,7 @@ SpriteIconMorph.prototype.userMenu = function () {
 
 // Override Snap! menus
 // Keeping the original one because we may want to re-override it in web-based versions
-// ToDo: Duplicate code! This is terrible style... we need to think of a better way 
+// ToDo: Duplicate code! This is terrible style... we need to think of a better way
 
 IDE_Morph.prototype.originalSnapMenu = IDE_Morph.prototype.snapMenu;
 IDE_Morph.prototype.snapMenu = function () {
@@ -29,7 +29,7 @@ IDE_Morph.prototype.snapMenu = function () {
 
     menu = new MenuMorph(this);
     menu.addItem('About Snap!...', 'aboutSnap');
-    menu.addItem('About Snap4Arduino...', 'aboutSnap4Arduino');
+    menu.addItem('About Snap4Rokduino...', 'aboutSnap4Arduino');
     menu.addLine();
     menu.addItem(
         'Snap! reference manual',
@@ -43,9 +43,9 @@ IDE_Morph.prototype.snapMenu = function () {
             window.open('http://snap.berkeley.edu/', 'SnapWebsite');
         }
     );
-    menu.addItem('Snap4Arduino website', 
+    menu.addItem('Snap4Arduino website',
                  function() {
-                     window.open('http://snap4arduino.org', 'Snap4ArduinoWebsite'); 
+                     window.open('http://snap4arduino.org', 'Snap4ArduinoWebsite');
                  }
                 );
                 menu.addItem(
@@ -524,7 +524,11 @@ IDE_Morph.prototype.projectMenu = function () {
     menu.addItem('Save and share', 'saveAndShare');
     menu.addLine();
     menu.addItem(
-        'New Arduino translatable project', 
+            'Send project to board',
+            'pushProject',
+            'Send this project\nto a Snap!-listener enabled\nboard.');
+    menu.addItem(
+        'New Arduino translatable project',
         'createNewArduinoProject',
         'Experimental feature!\nScripts written under this\n'
         + 'mode will be translatable\nas Arduino sketches');
@@ -708,10 +712,12 @@ IDE_Morph.prototype.aboutSnap4Arduino = function () {
     + 'Snap4Arduino is a modification of Snap! originally developed\n'
     + 'by the Edutec research group at the Citilab, Cornellà de\n'
     + 'Llobregat (Barcelona).\n\n'
+    + 'Snap4Rokduino is a modification of Snap4Arduino!\n'
+
 
     + 'For more information, please visit\n'
     + 'http://edutec.citilab.eu'
-    
+
     creditsTxt = localize('Contributors')
     + '\n\nErnesto Laval: MacOSX version, architectural decisions,\n'
     + 'several features and bugfixes, Spanish translation\n'
@@ -835,7 +841,7 @@ IDE_Morph.prototype.createLogo = function () {
 
 IDE_Morph.prototype.originalExportProject = IDE_Morph.prototype.exportProject;
 IDE_Morph.prototype.exportProject = function (name, plain) {
-    var menu, 
+    var menu,
     str,
     myself = this;
 
@@ -886,7 +892,7 @@ function saveFile(name, contents, extension, target) {
                 fileName = e.target.files[0].path;
 
                 if (fileName.slice(-4) != extension) {
-                    fileName += extension; 
+                    fileName += extension;
                 }
 
                 fs.writeFileSync(fileName, contents);
@@ -934,10 +940,10 @@ IDE_Morph.prototype.setLanguageS4A = function (lang, callback) {
         myself.reflectLanguage(lang, callback);
     };
     document.head.appendChild(s4aTranslation);
-    s4aTranslation.src = s4aSrc; 
+    s4aTranslation.src = s4aSrc;
 };
 
-// Fix problme with connected board when creating a new project 
+// Fix problme with connected board when creating a new project
 // while a board is connected (it is not freed for the new sprites)
 IDE_Morph.prototype.originalNewProject = IDE_Morph.prototype.newProject
 IDE_Morph.prototype.newProject = function () {
@@ -962,32 +968,41 @@ IDE_Morph.prototype.pushProject = function () {
             }
     ).withKey('pushProject').prompt(
         'Push project',
-        document.location.hostname + ':8080',
+        'arduino.local:8080',
         this.world()
         );
 };
 
 IDE_Morph.prototype.doPushProject = function (contents, url) {
     var myself = this,
-        http = new XMLHttpRequest();
-
-    http.open('POST', 'http://' + url, true);
-
-    http.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-    http.onreadystatechange = function () {
-        if (http.readyState === 4 && http.status === 200) {
+        http = require('http'),
+        splitUrl = url.replace('http://', '').split(':'),
+        options = {
+            hostname: splitUrl[0],
+            port: splitUrl[1],
+            path: '/',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': Buffer.byteLength(contents)
+            }
+        },
+        request = http.request(options, function (response) {
             myself.inform(
-                    'Done',
-                    http.responseText);
-        } else if (http.readyState === 4 && status !== 200) {
-            myself.inform(
-                    'Error',
-                    http.responseText);
-        }
-    };
+                    response.statusCode === 200 ? 'Done' : 'Error',
+                    response.statusMessage);
+        });
 
-    http.send(contents);
+    request.on('error', function (err) {
+        myself.inform('Error', err.message);
+    });
+
+    request.on('timeout', function () {
+        myself.inform('Cannot talk to the board', 'Please check the URL and port, and make\nsure the Snap! listener is running in the board');
+    });
+
+    request.write(contents);
+    request.end();
 };
 
 IDE_Morph.prototype.openFromUrl = function () {
@@ -1003,8 +1018,8 @@ IDE_Morph.prototype.saveAndShare = function () {
 
     if (!this.projectName) {
         myself.prompt(
-                'Please enter a name for your project', 
-                function (name) { 
+                'Please enter a name for your project',
+                function (name) {
                     myself.projectName = name;
                     myself.doSaveAndShare();
                 });
@@ -1092,14 +1107,14 @@ IDE_Morph.prototype.newArduinoProject = function() {
 
     // toggle unusable blocks
     var defs = SpriteMorph.prototype.blocks;
-   
-    SpriteMorph.prototype.categories.forEach(function (category) { 
+
+    SpriteMorph.prototype.categories.forEach(function (category) {
         Object.keys(defs).forEach(function (selector) {
             if (!defs[selector].transpilable) {
                 StageMorph.prototype.hiddenPrimitives[selector] = true;
             }
         });
-        myself.flushBlocksCache(category) 
+        myself.flushBlocksCache(category)
     });
 
     // hide empty categories
@@ -1137,12 +1152,12 @@ IDE_Morph.prototype.createNewProject = function () {
                     SpriteMorph.prototype.blockTemplates = SpriteMorph.prototype.notSoOriginalBlockTemplates;
                     myself.isArduinoTranslationMode = false;
                     // show all categories
-                    
+
                     myself.categories.children.forEach(function (each) {
                         each.setPosition(each.originalPosition);
                         each.show();
                     });
-                    
+
                     myself.categories.setHeight(myself.categories.height() + 30);
                 }
                 myself.newProject();

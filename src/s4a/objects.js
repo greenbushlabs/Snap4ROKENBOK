@@ -8,26 +8,26 @@ SpriteMorph.prototype.init = function(globals) {
 
 // Definition of a new Arduino Category
 
-SpriteMorph.prototype.categories.push('arduino');
-SpriteMorph.prototype.blockColor['arduino'] = new Color(24, 167, 181);
+SpriteMorph.prototype.categories.push('rokduino');
+SpriteMorph.prototype.blockColor['rokduino'] = new Color(24, 167, 181);
 
 SpriteMorph.prototype.originalInitBlocks = SpriteMorph.prototype.initBlocks;
 SpriteMorph.prototype.initArduinoBlocks = function () {
 
-    this.blocks.reportAnalogReading = 
+    this.blocks.reportAnalogReading =
     {
         only: SpriteMorph,
         type: 'reporter',
-        category: 'arduino',
+        category: 'rokduino',
         spec: 'analog reading %analogPin',
         transpilable: true
     };
 
-    this.blocks.reportDigitalReading = 
+    this.blocks.reportDigitalReading =
     {
         only: SpriteMorph,
         type: 'predicate',
-        category: 'arduino',
+        category: 'rokduino',
         spec: 'digital reading %digitalPin',
         transpilable: true
     };
@@ -36,7 +36,7 @@ SpriteMorph.prototype.initArduinoBlocks = function () {
     {
         only: SpriteMorph,
         type: 'command',
-        category: 'arduino',
+        category: 'rokduino',
         spec: 'connect arduino at %s'
     };
 
@@ -44,7 +44,7 @@ SpriteMorph.prototype.initArduinoBlocks = function () {
     {
         only: SpriteMorph,
         type: 'command',
-        category: 'arduino',
+        category: 'rokduino',
         spec: 'disconnect arduino'
     };
 
@@ -53,42 +53,54 @@ SpriteMorph.prototype.initArduinoBlocks = function () {
     {
         only: SpriteMorph,
         type: 'command',
-        category: 'arduino',
-        spec: 'setup digital pin %digitalPin as %pinMode',
+        category: 'rokduino',
+        spec: '=== %digitalPin === %pinMode',
         defaults: [null, localize('servo')],
         transpilable: true
     };
 
+// @@@@@@@@@@@@ Block Menu   @@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     this.blocks.digitalWrite =
     {
-        only: SpriteMorph,
-        type: 'command',
-        category: 'arduino',
-        spec: 'set digital pin %digitalPin to %b',
-        transpilable: true
+      only: SpriteMorph,
+      type: 'command',
+      category: 'rokduino',
+      spec: 'RokDuino Motor %digitalPin Direction %servoValue',
+      transpilable: true
     };
-
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     this.blocks.servoWrite =
     {
         only: SpriteMorph,
         type: 'command',
-        category: 'arduino',
-        spec: 'set servo %servoPin to %servoValue',
+        category: 'rokduino',
+        spec: '=== %servoPin === %servoValue',
         defaults: [null, ['clockwise']],
         transpilable: true
     };
-
+    // @@@@@@@@@@@@ Block Menu   @@@@@@@@@@@@@@@@@@
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     this.blocks.pwmWrite =
     {
         only: SpriteMorph,
         type: 'command',
-        category: 'arduino',
-        spec: 'set pin %pwmPin to value %n',
-	defaults: [null, 128],
+        category: 'rokduino',
+        spec: 'RokDuino Motor %pwmPin Speed %n',
+	      defaults: [null, 128],
         transpilable: true
     };
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    // Ardui... nization? 
+    // Ardui... nization?
     // Whatever, let's dumb this language down:
 
     this.blocks.receiveGo.transpilable = true;
@@ -177,16 +189,16 @@ SpriteMorph.prototype.originalBlockTemplates = SpriteMorph.prototype.blockTempla
 SpriteMorph.prototype.blockTemplates = function (category) {
     var myself = this;
 
-    var blocks = myself.originalBlockTemplates(category); 
+    var blocks = myself.originalBlockTemplates(category);
 
-    //  Button that triggers a connection attempt 
+    //  Button that triggers a connection attempt
 
     this.arduinoConnectButton = new PushButtonMorph(
             null,
             function () {
                 myself.arduino.attemptConnection();
             },
-            'Connect Arduino'
+            'Connect RokDuino'
             );
 
     //  Button that triggers a disconnection from board
@@ -196,7 +208,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
             function () {
                 myself.arduino.disconnect();;
             },
-            'Disconnect Arduino'
+            'Disconnect RokDuino'
             );
 
     function arduinoWatcherToggle (selector) {
@@ -234,8 +246,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
             },
             null
         );
-    };
-
+    }
     function blockBySelector (selector) {
         if (StageMorph.prototype.hiddenPrimitives[selector]) {
             return null;
@@ -249,7 +260,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         reportAnalog = blockBySelector('reportAnalogReading'),
         digitalToggle = arduinoWatcherToggle('reportDigitalReading'),
         reportDigital = blockBySelector('reportDigitalReading');
-    
+
     if (reportAnalog) {
         reportAnalog.toggle = analogToggle;
     }
@@ -258,20 +269,14 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         reportDigital.toggle = digitalToggle;
     }
 
-    if (category === 'arduino') {
+    if (category === 'rokduino') {
         blocks.push(this.arduinoConnectButton);
         blocks.push(this.arduinoDisconnectButton);
         blocks.push('-');
-        blocks.push(blockBySelector('connectArduino'));
-        blocks.push(blockBySelector('disconnectArduino'));
-        blocks.push('-');
-        blocks.push(blockBySelector('servoWrite'));
         blocks.push(blockBySelector('digitalWrite'));
         blocks.push(blockBySelector('pwmWrite'));
         blocks.push('-');
-        blocks.push(analogToggle);
         blocks.push(reportAnalog);
-        blocks.push(digitalToggle);
         blocks.push(reportDigital);
 
     } else if (category === 'other') {
@@ -518,7 +523,7 @@ SpriteMorph.prototype.freshPalette = function (category) {
 SpriteMorph.prototype.originalFullCopy = SpriteMorph.prototype.fullCopy;
 SpriteMorph.prototype.fullCopy = function (forClone) {
     var c = this.originalFullCopy(forClone);
-   
+
     if (!forClone) {
         c.arduino = new Arduino(c);
     }
@@ -563,11 +568,8 @@ SpriteMorph.prototype.arduinoWatcher = function (selector, label, color, pin) {
     var stage = this.parentThatIsA(StageMorph),
         watcher,
         others;
-
     if (!stage) { return; }
-
     watcher = this.arduinoWatcherFor(stage, selector, pin);
-
     if (watcher) {
         if (watcher.isVisible) {
             watcher.hide();
@@ -628,7 +630,7 @@ SpriteMorph.prototype.arduinoWatcherFor = function (stage, selector, pin) {
         return morph instanceof WatcherMorph &&
             morph.getter === selector &&
             morph.target === (morph.isGlobal(selector) ? stage : myself) &&
-            morph.pin === pin; 
+            morph.pin === pin;
     });
 };
 
@@ -644,4 +646,3 @@ SpriteMorph.prototype.showingArduinoWatcher = function (selector, pin) {
     }
     return false;
 };
-

@@ -5,17 +5,22 @@ SyntaxElementMorph.prototype.labelPart = function(spec) {
     var part,
         block = this;
 
+
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // Where the block menus are defined
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     switch (spec) {
         case '%servoValue':
             part = new InputSlotMorph(
                     null,
                     false,
                     {
-                        'angle (0-180)' : 90,
-                        'stopped (1500)' : ['stopped'], 
-                        'clockwise (1500-1000)' : ['clockwise'],
-                        'counter-clockwise (1500-2000)' : ['counter-clockwise'],
-                        'disconnected' : ['disconnected']
+                        'Clockwise' : 0,
+                        'Counter-Clockwise' : 1
                     }
                     );
             break;
@@ -36,7 +41,7 @@ SyntaxElementMorph.prototype.labelPart = function(spec) {
             part = new InputSlotMorph(
                     null,
                     true,
-                    function() { 
+                    function() {
                         // Get board associated to currentSprite
                         var sprite = ide.currentSprite,
                             board = sprite.arduino.board;
@@ -49,49 +54,27 @@ SyntaxElementMorph.prototype.labelPart = function(spec) {
                     }
                     );
             break;
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            // THIS IS THE DIGITAL PIN TO USE MENU - WE NEED TO TRANSLATE
+            //  THE PIN NUMBER TO THE  ROKDUINO PORT !
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
         case '%pwmPin':
             part = new InputSlotMorph(
-                    null,
-                    true,
-                    function() { 
-                        // Get board associated to currentSprite
-                        var sprite = ide.currentSprite,
-                            board = sprite.arduino.board;
-
-                        if (board) {
-                            // Can't use map because we need to construct keys dynamically
-                            var pins = {};
-                            Object.keys(sprite.arduino.pinsSettableToMode(board.MODES.PWM)).forEach(function (each) { pins[each + '~'] = each });
-                            return pins;
-                        } else {
-                            return [];
-                        }
-                    }
-                    );
+              null,
+              false,
+              {
+                  '1' : 11,
+                  '2' : 6,
+                  '3' : 3,
+                  '4' : 13
+              }
+              );
             break;
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         case '%analogPin':
-            part = new InputSlotMorph(
-                    null,
-                    true,
-                    function() { 
-                        // Get board associated to currentSprite
-                        var sprite = ide.currentSprite,
-                            board = sprite.arduino.board;
-                        
-                        if (board) { 
-                            return board.analogPins.map(
-                                    function (each){
-                                        return (each - board.analogPins[0]).toString();
-                                    });
-                        } else { 
-                            return [];
-                        } 
-                    }
-                    );
-            part.originalChanged = part.changed;
-            part.changed = function () { part.originalChanged(); if (block.toggle) { block.toggle.refresh(); } };
-            break;
-        case '%digitalPin':
             part = new InputSlotMorph(
                     null,
                     true,
@@ -101,19 +84,10 @@ SyntaxElementMorph.prototype.labelPart = function(spec) {
                             board = sprite.arduino.board;
 
                         if (board) {
-                            var pinNumbers = [],
-                                pins = board.pins.filter(
-                                        function (each){ 
-                                            return each.analogChannel == 127 
-                                        });
-                            
-                            pins.forEach(
-                                    function (each) {
-                                        pinNumbers.push(pins.indexOf(each).toString());
+                            return board.analogPins.map(
+                                    function (each){
+                                        return (each - board.analogPins[0]).toString();
                                     });
-
-                            return pinNumbers;
-
                         } else {
                             return [];
                         }
@@ -122,6 +96,26 @@ SyntaxElementMorph.prototype.labelPart = function(spec) {
             part.originalChanged = part.changed;
             part.changed = function () { part.originalChanged(); if (block.toggle) { block.toggle.refresh(); } };
             break;
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // THIS IS THE DIGITAL PIN TO USE MENU - WE NEED TO TRANSLATE
+        //  THE PIN NUMBER TO THE  ROKDUINO PORT !
+        // convert RokDuino port - Arduino Leaonardo port
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        case '%digitalPin':
+            part = new InputSlotMorph(
+                null,
+                false,
+                {
+                    '1' : 23,
+                    '2' : 14,
+                    '3' : 4,
+                    '4' : 12
+                }
+                );
+      break;
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         default:
             part = this.originalLabelPart(spec);
     }
@@ -136,16 +130,6 @@ BlockMorph.prototype.userMenu = function () {
         alternatives,
         top,
         blck;
-
-	function addOption(label, toggle, test, onHint, offHint) {
-        var on = '\u2611 ',
-            off = '\u2610 ';
-        menu.addItem(
-            (test ? on : off) + localize(label),
-            toggle,
-            test ? onHint : offHint
-        );
-    }
 
     menu.addItem(
         "help...",
